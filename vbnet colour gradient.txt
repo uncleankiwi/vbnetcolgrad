@@ -1,0 +1,136 @@
+' Completed June 7, 2014 with SharpDevelop.
+' Controls you'll need:
+'     listbox: list1
+'     textbox: text1
+'     richtextbox: rich1
+'     buttons: buttoncolour, buttonadd, buttonremove, buttonrem, buttonedit
+'     colordialog: color1
+' Shortfall 1: You'll need to copy the output to some richtext editor like Word before pasting it elsewhere
+' Shortfall 2: No font control
+' Shortfall 3: No auto clipboard.settext
+
+Public Partial Class MainForm
+    Public Sub New()
+        Me.InitializeComponent()
+    End Sub
+    
+    Sub List1SelectedIndexChanged(sender As Object, e As EventArgs)
+            
+    End Sub
+    
+    Sub MainFormLoad(sender As Object, e As EventArgs)
+        list1.Items.Add("#000000")
+        list1.selectedindex = 0
+        
+    End Sub
+    
+    Sub ButtonaddClick(sender As Object, e As EventArgs)
+        list1.Items.Add("#000000")
+    End Sub
+    
+    Sub ButtonremClick(sender As Object, e As EventArgs)
+        If list1.Items.Count = 1 Then Exit Sub
+        list1.Items.Remove(list1.SelectedItem)
+    End Sub
+    
+    Sub ButtoneditClick(sender As Object, e As EventArgs)
+        color1.ShowDialog()    
+        list1.Items.Item(list1.SelectedIndex) = "#" & Strings.right(color1.Color.ToArgb().ToString("X"), 6)
+        'right(string, length to splice)
+        'since colortranslator.tohtml sometimes return the english word
+
+    End Sub
+    
+    Sub ButtoncolourClick(sender As Object, e As EventArgs)
+        If text1.Text = "" Then Exit Sub
+        
+        Dim charlength As Integer = Len(text1.Text)
+        if charlength = 1 then
+            rich1.Text = text1.Text
+            rich1.SelectAll
+            rich1.SelectionColor = ColorTranslator.FromHtml(list1.Items.Item(0).ToString)
+            Exit Sub
+        End If
+        Dim colourcount As Integer = list1.Items.Count
+        Dim unicolour As Boolean = False
+        If colourcount = 1 Then
+            unicolour = True
+            colourcount = 2
+        End If
+        Dim charspacing As Double = 1 / (charlength - 1)
+        Dim colourspacing As Double = 1 / (colourcount - 1)
+        Dim colourarray As New ArrayList
+        Dim spacingarray As New ArrayList
+        If unicolour = True Then
+            colourarray.Add(list1.Items.item(0))
+            colourarray.Add(list1.Items.item(0))
+            spacingarray.Add(1)
+        Else
+            For i = 0 To colourcount - 1
+                colourarray.Add(list1.Items.item(i))
+                spacingarray.Add(i * colourspacing)
+                'Debug.Print(list1.Items.Item(i))
+                'Debug.Print(i * colourspacing)
+            Next
+        End If
+        
+        
+        Dim posleft As Double
+        Dim posright As Double
+        Dim currpos As Double
+        Dim colourindex As Integer = 0 'position of colourleft in the list, from 1 to colourcount
+        'the first two colours and their positions
+        posleft = 0
+        posright = colourspacing
+        Dim colourleft As color = ColorTranslator.FromHtml(colourarray(0))
+        Dim colourright As Color = ColorTranslator.FromHtml(colourarray(1))
+        Dim tempr As Integer
+        Dim tempg As Integer
+        Dim tempb As Integer
+        
+    
+        rich1.Text = text1.Text
+        For i = 1 To charlength
+            rich1.Select(i - 1, 1)
+            currpos = (i - 1) * charspacing
+            If spacingarray.Contains(currpos) Then
+                'if a character lands precisely on a colour
+                rich1.SelectionColor = ColorTranslator.FromHtml(colourarray.Item(spacingarray.IndexOf(currpos)).tostring)
+            Else
+                'if a character lands somewhere between two colours
+                If posright < currpos Then
+                    'character is not between colourleft and colourright
+                    posleft = posleft + colourspacing
+                    posright = posright + colourspacing
+                    colourindex = colourindex + 1
+                    colourleft = ColorTranslator.FromHtml(colourarray(colourindex))
+                    colourright = ColorTranslator.FromHtml(colourarray(colourindex + 1))
+                End If
+                
+                tempr = (colourright.R * (currpos - posleft) / colourspacing + colourleft.R * (posright - currpos) / colourspacing) \ 1
+                tempg = (colourright.G * (currpos - posleft) / colourspacing + colourleft.G * (posright - currpos) / colourspacing) \ 1
+                tempb = (colourright.B * (currpos - posleft) / colourspacing + colourleft.B * (posright - currpos) / colourspacing) \ 1
+                rich1.SelectionColor = Color.FromArgb(255, tempr, tempg,tempb)
+                
+'                Debug.Print("tempr" & tempr & "tempg" & tempg & "tempb" & tempb)
+'                Debug.Print("colourleft" & colortranslator.tohtml(colourleft))
+'                Debug.Print("colourright" & ColorTranslator.ToHtml(colourright))
+                
+'                rich1.SelectionColor = Color.FromArgb(255, _
+'                    (colourright.R * (currpos - posleft) / colourspacing + _
+'                    colourleft.R * (posright - currpos) / colourspacing) \ 2, _
+'                    (colourright.G * (currpos - posleft) / colourspacing + _
+'                    colourleft.G * (posright - currpos) / colourspacing) \ 2 _
+'                    (colourright.B * (currpos - posleft) / colourspacing + _
+'                    colourleft.B * (posright - currpos) / colourspacing) \ 2))
+
+            End If
+        Next
+        
+'        Clipboard.Clear
+'        rich1.SelectAll
+'        Clipboard.SetText(rich1.rtf, TextDataFormat.html)
+'        rich1.DeselectAll
+        
+    End Sub
+End Class
